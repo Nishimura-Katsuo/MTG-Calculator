@@ -54,13 +54,13 @@ let DeckAnalyzer = (({defaults, clamp, f}) => class DA {
 		return val;
 	}
 
-	static deckStats (land = defaults.land, raiseCurve = defaults.raiseCurve, maxCost = defaults.maxCost, reserved = defaults.reserved, deckSize = defaults.deckSize) {
+	static deckStats (land = defaults.land, raiseCurve = defaults.raiseCurve, maxCost = defaults.maxCost, reserved = defaults.reserved, deckSize = defaults.deckSize, initialHandSize = defaults.handSize) {
 		let ret = {}, grid = [];
 
 		ret.lands = land;
 
-		for (let curturn = 0, draws = 5; draws <= deckSize; curturn++, draws++) {
-			for (let c = 0; c <= curturn + 6; c++) {
+		for (let curturn = 0, draws = initialHandSize - 2; draws <= deckSize; curturn++, draws++) {
+			for (let c = 0; c <= curturn + initialHandSize - 1; c++) {
 				grid[curturn] = grid[curturn] || [];
 				grid[curturn][c] = DA.optimal(DA.poolChance(c, draws, deckSize));
 			}
@@ -68,8 +68,8 @@ let DeckAnalyzer = (({defaults, clamp, f}) => class DA {
 
 		ret.curve = [0];
 
-		for (let curturn = 1, draws = 6, total = land + reserved, cards = [], rawpool = []; draws <= deckSize && total < deckSize; curturn++, draws++) {
-			let ma = Math.min(ret.lands, curturn, DA.optimal(DA.cardChance(ret.lands, draws, deckSize)));
+		for (let curturn = 1, draws = initialHandSize - 1, total = land + reserved, cards = [], rawpool = []; draws <= deckSize && total < deckSize; curturn++, draws++) {
+			let ma = ret.lands > 0 ? Math.min(ret.lands, curturn, DA.optimal(DA.cardChance(ret.lands, draws, deckSize))) : Math.min(curturn, defaults.hsManaMax);
 			let mc = maxCost <= 0 ? [0] : ma <= maxCost ? [ma] : [maxCost, ma - maxCost].sort().reverse(), pooldiff = 0;
 
 			mc.forEach(cost => {
@@ -105,6 +105,8 @@ let DeckAnalyzer = (({defaults, clamp, f}) => class DA {
 		variance: 1,
 		reserved: 12,
 		maxCost: 6,
+		handSize: 7,
+		hsManaMax: 10,
 	}),
 	clamp: (min, v, max) => Math.max(min, Math.min(v, max)),
 	f: ((_f_cache_ = []) => function _self_ (n) {

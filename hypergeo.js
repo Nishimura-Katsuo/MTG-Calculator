@@ -18,15 +18,14 @@ Number.prototype.fmt = function (padlen = 2) {
 
 function calc (e) {
 	try {
-		let stats = DeckAnalyzer.deckStats(...getParams('land', 'raiseCurve', 'maxCost', 'reserved', 'deckSize')), curve = stats.curve.map((count, cost) => {
+		let stats = DeckAnalyzer.deckStats(...getParams('land', 'raiseCurve', 'maxCost', 'reserved', 'deckSize', 'handSize')), curve = stats.curve.map((count, cost) => {
 			return cost || count ? cost.fmt(3) + ' drops:' + count.fmt(3) : undefined;
 		}).filter(Boolean).join('\n');
-		$('output').innerHTML = `<b>Deck Stats</b>
-Lands:     ${stats.lands.fmt()}
-Spells:    ${stats.spells.fmt()}
-Reserved:  ${stats.extra.fmt()}
-
-Curve:
+		$('output').innerHTML = '<b>Deck Stats</b>\n' + 
+(stats.lands ?                                     `Lands:     ${stats.lands.fmt()}\n` : '') + 
+(stats.spells && stats.spells !== stats.deckSize ? `Spells:    ${stats.spells.fmt()}\n` : '') + 
+(stats.extra ?                                     `Reserved:  ${stats.extra.fmt()}\n` : '') + 
+`\nCurve:
 ${curve}
 
 Total:     ${stats.deckSize.fmt()}`;
@@ -46,7 +45,7 @@ window.onload = () => {
 		}
 	};
 
-	let fields = ['deckSize', 'land', 'raiseCurve', 'maxCost', 'reserved'];
+	let fields = ['deckSize', 'handSize', 'land', 'raiseCurve', 'maxCost', 'reserved'];
 
 	fields.forEach(id => {
 		$(id).placeholder = DeckAnalyzer.defaults[id];
@@ -86,6 +85,7 @@ window.onload = () => {
 	let presets = {
 			Aggro: {
 				deckSize: 60,
+				handSize: 7,
 				land: 20,
 				raiseCurve: 0,
 				reserved: 7,
@@ -94,6 +94,7 @@ window.onload = () => {
 			},
 			Midrange: {
 				deckSize: DeckAnalyzer.defaults.deckSize,
+				handSize: 7,
 				land: DeckAnalyzer.defaults.land,
 				raiseCurve: DeckAnalyzer.defaults.raiseCurve,
 				reserved: DeckAnalyzer.defaults.reserved,
@@ -102,6 +103,7 @@ window.onload = () => {
 			},
 			Control: {
 				deckSize: 60,
+				handSize: 7,
 				land: 27,
 				raiseCurve: 3,
 				reserved: 7,
@@ -110,14 +112,25 @@ window.onload = () => {
 			},
 			Limited: {
 				deckSize: 40,
+				handSize: 7,
 				land: 15,
 				raiseCurve: 4,
 				reserved: 2,
 				maxCost: '',
 				tooltip: 'Limited Decks (formats with 40 card deck limits)\n *Uses few one cost creatures, or none.\n *Keeps the mana curve high due to limited card access.\n *Usually plays a midrange strategy.\n *Reserves cards for ending the game.'
 			},
+			HearthStone: {
+				deckSize: 30,
+				handSize: 4,
+				land: 0,
+				raiseCurve: 5,
+				reserved: 0,
+				maxCost: 10,
+				tooltip: 'Basic HearthStone mana curve.'
+			},
 			Clear: {
 				deckSize: '',
+				handSize: '',
 				land: '',
 				raiseCurve: '',
 				reserved: '',
