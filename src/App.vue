@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 
 const deckSize = ref(60);
-const landCount = ref(25);
+const landCount = ref(21);
 const maxTurns = 12;
 
 function range(start: number, end: number): number[] {
@@ -80,8 +80,22 @@ const landDrops = computed(() => {
     return range(0, maxTurns).map(generateCurrentLandCount);
 });
 
-const landDraws = computed(() => {
-    return range(0, maxTurns).map(generateCurrentLandDraws);
+const openingHandLands = computed<{
+    [key : string]: number;
+}>(() => {
+    let ret: { [key: string]: number } = {};
+
+    for (let i = 0; i <= 7; i++) {
+        ret[i] = hypergeometricDistribution(deckSize.value, landCount.value, 7, i);
+    }
+
+    let remove = Object.entries(ret).sort((a, b) => b[1] - a[1]).slice(3).map(([key]) => key);
+
+    remove.forEach(key => {
+        delete ret[key];
+    });
+
+    return ret;
 });
 
 function generateCostCounts(): number[] {
@@ -142,14 +156,18 @@ const costCounts = computed(() => generateCostCounts());
                 <label for="land-count">Land Count</label>
                 <input id="land-count" type="number" step="1" min="1" :max="deckSize" v-model="landCount" />
             </div>
+            <div class="input-group" style="gap:0">
+                <label>Opening Hand</label>
+                <div v-for="(percent, count) in openingHandLands" style="padding:0;margin:0">{{ count }} Lands @ {{ Math.round(percent * 100) }}%</div>
+            </div>
         </div>
 
         <div class="table-wrapper">
             <table>
-                <caption>CMC distribution</caption>
+                <caption>Cost distribution</caption>
                 <thead>
                     <tr>
-                        <th>CMC</th>
+                        <th>Card Cost</th>
                         <template v-for="i in Object.keys(costCounts).map(Number)">
                             <th v-if="i > 0">{{ i }}</th>
                         </template>
@@ -181,28 +199,6 @@ const costCounts = computed(() => generateCostCounts());
                     <tr>
                         <th>Lands</th>
                         <template v-for="(n, i) in landDrops">
-                            <td v-if="i > 0">{{ n }}</td>
-                        </template>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="table-wrapper">
-            <table>
-                <caption>Land Draws</caption>
-                <thead>
-                    <tr>
-                        <th>Turn</th>
-                        <template v-for="i in Object.keys(landDraws).map(Number)">
-                            <th v-if="i > 0">{{ i }}</th>
-                        </template>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th>Lands</th>
-                        <template v-for="(n, i) in landDraws">
                             <td v-if="i > 0">{{ n }}</td>
                         </template>
                     </tr>
@@ -262,7 +258,7 @@ input[type="radio"]:focus {
     flex-direction: row;
     gap: 1.5rem;
     justify-content: center;
-    align-items: center;
+    align-items: start;
 }
 
 .input-group {
